@@ -46,7 +46,7 @@ export function useProductGenerator() {
 
     try {
       // 각 상품을 개별적으로 처리
-      productNames.forEach(async (name, index) => {
+      for (let index = 0; index < productNames.length; index++) {
         setProcessingIndexes((prev) => [...prev, index]);
 
         try {
@@ -55,7 +55,7 @@ export function useProductGenerator() {
 
           // 상품명 생성
           const result = await productService.generateProductName(
-            name,
+            productNames[index],
             imageUrls[index]
           );
 
@@ -73,7 +73,7 @@ export function useProductGenerator() {
             setIsLoading(false);
           }
         }
-      });
+      }
     } catch (err) {
       setError(err.message);
       setIsLoading(false);
@@ -81,7 +81,7 @@ export function useProductGenerator() {
   };
 
   const handleDownload = () => {
-    productService.generateExcelFile(results);
+    console.log("download");
   };
 
   return {
