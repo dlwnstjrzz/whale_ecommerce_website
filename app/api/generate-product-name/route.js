@@ -23,7 +23,6 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    console.log("relatedKeywords", relatedKeywords);
 
     const stringifyRelatedKeywords = relatedKeywords
       .map((k) => k.keyword)
@@ -154,7 +153,6 @@ export async function POST(request) {
    ❌ "예쁜 머리핀 귀여운 어린이용 헤어핀 부드러운 천" (꾸미는 형용사 과다)
 
 위 규칙에 따라 1개의 상품명을 생성해주세요. 각 상품명은 새로운 줄에 작성해주세요.`;
-    console.log("prompt", prompt);
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [

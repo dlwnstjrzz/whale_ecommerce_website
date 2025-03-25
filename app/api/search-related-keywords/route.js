@@ -62,7 +62,6 @@ export async function POST(request) {
       );
     });
 
-    console.log("filteredData", filteredData);
     return NextResponse.json({
       relatedKeywords: filteredData.map((item) => item.keyword),
       rawData: filteredData,

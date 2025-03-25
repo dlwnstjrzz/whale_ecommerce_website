@@ -47,7 +47,7 @@ export function useSubscription() {
   }, [user]);
 
   // 토큰 사용
-  const useToken = useCallback(async () => {
+  const consumeToken = useCallback(async () => {
     if (!user) {
       throw new Error("로그인이 필요합니다.");
     }
@@ -158,7 +158,7 @@ export function useSubscription() {
     loading,
     error,
     loadSubscription,
-    useToken,
+    consumeToken,
     activateSubscriptionForDebug,
     addTokensForDebug,
     hasActiveSubscription: subscription?.status === "active",

@@ -64,6 +64,7 @@ export async function GET(request) {
     }
 
     const data = await response.json();
+    console.log("쇼핑 데이터", data);
     // 응답 반환
     return NextResponse.json(data, {
       headers: {

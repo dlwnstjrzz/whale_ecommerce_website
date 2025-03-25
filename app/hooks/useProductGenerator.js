@@ -10,7 +10,7 @@ export function useProductGenerator() {
   const [error, setError] = useState(null);
   const [results, setResults] = useState([]);
   const [processingIndexes, setProcessingIndexes] = useState([]);
-  const { useToken, hasActiveSubscription, remainingTokens } =
+  const { consumeToken, hasActiveSubscription, remainingTokens } =
     useSubscription();
   const router = useRouter();
 
@@ -51,7 +51,7 @@ export function useProductGenerator() {
 
         try {
           // 토큰 사용
-          await useToken();
+          await consumeToken();
 
           // 상품명 생성
           const result = await productService.generateProductName(
