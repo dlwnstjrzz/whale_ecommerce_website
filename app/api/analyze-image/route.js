@@ -52,8 +52,8 @@ export async function POST(request) {
       - 검색 가능한 대체 지칭어 포함
    
    h. 기타 특징:
-      - 계절, 크기, 색상 등
-      - 검색 가능한 구체적인 특징명 사용
+      - 계절, 크기 등
+      - 검색 가능한 구체적인 특징명 사용(색상은 제외)
 
 3. 주의사항:
    - 검색되지 않을 형용사 사용 금지 (예쁜, 귀여운, 부드러운 등)
@@ -85,7 +85,7 @@ export async function POST(request) {
    }`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",

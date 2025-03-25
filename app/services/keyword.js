@@ -51,6 +51,7 @@ export default async function searchRelatedKeywords(
       mainKeyword: extractedKeyword,
       categoryId,
       sortedKeywords: finalKeywords,
+      titleKeywords,
     };
   } catch (error) {
     console.error("키워드 분석 중 오류 발생:", error);
@@ -69,7 +70,7 @@ async function fetchShoppingItems(keyword) {
       `/api/naver-shopping-search-api?query=${keyword}`
     );
     const data = await response.json();
-
+    console.log("쇼핑 검색 결과", data);
     if (data.error) {
       throw new Error(data.error);
     }

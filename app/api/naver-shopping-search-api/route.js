@@ -64,7 +64,10 @@ export async function GET(request) {
     }
 
     const data = await response.json();
-    console.log("쇼핑 데이터", data);
+    console.log("쇼핑 데이터", {
+      ...data,
+      items: data.items.slice(0, 10),
+    });
     // 응답 반환
     return NextResponse.json(data, {
       headers: {

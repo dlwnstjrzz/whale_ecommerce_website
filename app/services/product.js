@@ -47,7 +47,7 @@ export async function generateProductName(
       extractedKeyword = keywordResult.keyword;
     }
     // 2. 연관 키워드 검색
-    const { sortedKeywords, categoryName, categoryId } =
+    const { sortedKeywords, categoryName, categoryId, titleKeywords } =
       await searchRelatedKeywords(productName, extractedKeyword);
     // 3. 이미지 분석
     const imageAnalysis = await analyzeImage(imageUrl);
@@ -66,6 +66,7 @@ export async function generateProductName(
         categoryName,
         categoryId,
         imageAnalysis,
+        titleKeywords,
       }),
     });
 
