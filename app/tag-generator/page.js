@@ -66,7 +66,6 @@ export default function TagGenerator() {
 
             <div className="pt-4">
               <Button
-                id="naver-scrape-btn"
                 type="submit"
                 disabled={
                   isLoading ||

@@ -74,6 +74,9 @@ export function ResultSection({
 
   // 연관 키워드의 월 검색량 계산
   const getMonthlySearchVolume = (keyword) => {
+    if (keyword.sourceDetails?.[0]?.source === "titleKeyword") {
+      return keyword.sourceDetails[0].count;
+    }
     const pcVolume = keyword.sourceDetails?.[0]?.monthlyPcQcCnt || 0;
     const mobileVolume = keyword.sourceDetails?.[0]?.monthlyMobileQcCnt || 0;
 
@@ -329,25 +332,68 @@ export function ResultSection({
             </div>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {sortedKeywords.map((keyword, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors cursor-pointer"
-                  onClick={() => insertKeyword(keyword.keyword)}
-                >
-                  <span className="text-sm font-medium text-gray-900">
-                    {keyword.keyword}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-white border-gray-200 text-xs"
-                  >
-                    {getMonthlySearchVolume(keyword).toLocaleString()}
-                    <span className="text-gray-500 ml-1">회/월</span>
-                  </Badge>
-                </div>
-              ))}
+            {/* 검색 광고 키워드 */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-3">
+                검색 광고 키워드
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {sortedKeywords
+                  .filter(
+                    (keyword) =>
+                      keyword.sourceDetails?.[0]?.source === "searchad"
+                  )
+                  .map((keyword, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors cursor-pointer"
+                      onClick={() => insertKeyword(keyword.keyword)}
+                    >
+                      <span className="text-sm font-medium text-gray-900">
+                        {keyword.keyword}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="bg-white border-gray-200 text-xs"
+                      >
+                        {getMonthlySearchVolume(keyword).toLocaleString()}
+                        <span className="text-gray-500 ml-1">회/월</span>
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* 제목 키워드 */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-3">
+                제목 키워드
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {sortedKeywords
+                  .filter(
+                    (keyword) =>
+                      keyword.sourceDetails?.[0]?.source === "titleKeyword"
+                  )
+                  .map((keyword, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors cursor-pointer"
+                      onClick={() => insertKeyword(keyword.keyword)}
+                    >
+                      <span className="text-sm font-medium text-gray-900">
+                        {keyword.keyword}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="bg-white border-gray-200 text-xs"
+                      >
+                        {getMonthlySearchVolume(keyword).toLocaleString()}
+                        <span className="text-gray-500 ml-1">회</span>
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
             </div>
           </CardContent>
         </Card>
