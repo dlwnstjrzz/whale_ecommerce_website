@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ProductForm } from "./components/ProductForm";
 import { ResultSection } from "./components/ResultSection";
 import { ErrorMessage } from "./components/ErrorMessage";
@@ -48,31 +47,6 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50">
       <Navbar />
       <ProtectedRoute>
-        {/* 구독 알림 섹션 */}
-        {(!subscription || subscription.status !== "active") && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="p-5 bg-blue-50 border border-blue-100 rounded-lg flex flex-col sm:flex-row justify-between items-center">
-              <div className="mb-4 sm:mb-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  AI 상품명 생성을 시작하세요
-                </h3>
-                <p className="text-gray-600">
-                  더 좋은 상품명으로 판매율을 높이세요. 구독하시면 바로 사용할
-                  수 있습니다.
-                </p>
-              </div>
-              <Link href="/subscription">
-                <Button
-                  size="lg"
-                  className="shadow-sm rounded-full px-6 bg-primary hover:bg-primary/90"
-                >
-                  구독 시작하기
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
-
         {/* 토큰 부족 알림 */}
         {subscription &&
           subscription.status === "active" &&

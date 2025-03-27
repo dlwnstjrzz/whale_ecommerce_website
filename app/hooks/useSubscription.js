@@ -1,50 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { useAuth } from "@/lib/authContext";
 import { doc, getDoc, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import useSubscriptionStore from "@/lib/stores/subscriptionStore";
 
 export function useSubscription() {
   const { user } = useAuth();
-  const [subscription, setSubscription] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // 구독 정보 로드
-  const loadSubscription = useCallback(async () => {
-    if (!user) {
-      setSubscription(null);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        setSubscription(
-          userData.subscription || {
-            status: "inactive",
-            plan: null,
-            tokens: 0,
-            startDate: null,
-            endDate: null,
-          }
-        );
-      }
-    } catch (err) {
-      console.error("구독 정보 로드 오류:", err);
-      setError("구독 정보를 불러오는 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  const router = useRouter();
+  const {
+    subscription,
+    loading,
+    error,
+    updateSubscription,
+    setLoading,
+    setError,
+  } = useSubscriptionStore();
 
   // 토큰 사용
   const consumeToken = useCallback(async () => {
@@ -65,11 +38,15 @@ export function useSubscription() {
 
       // 구독 상태 확인
       if (userSubscription.status !== "active") {
-        throw new Error("활성화된 구독이 없습니다.");
+        router.push("/subscription");
+        throw new Error(
+          "활성화된 구독이 필요합니다. 구독 플랜을 선택해주세요."
+        );
       }
 
       // 토큰 수량 확인
       if (userSubscription.tokens <= 0) {
+        router.push("/subscription/add-tokens");
         throw new Error(
           "사용 가능한 토큰이 없습니다. 추가 토큰을 구매해주세요."
         );
@@ -80,15 +57,19 @@ export function useSubscription() {
         "subscription.tokens": increment(-1),
       });
 
-      // 구독 정보 다시 로드
-      await loadSubscription();
+      // 구독 정보 업데이트
+      const updatedSubscription = {
+        ...userSubscription,
+        tokens: userSubscription.tokens - 1,
+      };
+      updateSubscription(updatedSubscription);
 
       return true;
     } catch (err) {
       console.error("토큰 사용 오류:", err);
       throw err;
     }
-  }, [user, loadSubscription]);
+  }, [user, updateSubscription, router]);
 
   // 디버깅용: 구독 활성화 및 토큰 추가 (결제 과정 생략)
   const activateSubscriptionForDebug = useCallback(
@@ -103,16 +84,20 @@ export function useSubscription() {
         const endDate = new Date();
         endDate.setMonth(now.getMonth() + 1); // 한 달 후
 
+        const updatedSubscription = {
+          status: "active",
+          plan,
+          tokens,
+          startDate: now.toISOString(),
+          endDate: endDate.toISOString(),
+        };
+
         await updateDoc(userRef, {
-          "subscription.status": "active",
-          "subscription.plan": plan,
-          "subscription.tokens": tokens,
-          "subscription.startDate": now.toISOString(),
-          "subscription.endDate": endDate.toISOString(),
+          subscription: updatedSubscription,
         });
 
-        // 구독 정보 다시 로드
-        await loadSubscription();
+        // 구독 정보 업데이트
+        updateSubscription(updatedSubscription);
 
         return true;
       } catch (err) {
@@ -120,7 +105,7 @@ export function useSubscription() {
         throw err;
       }
     },
-    [user, loadSubscription]
+    [user, updateSubscription]
   );
 
   // 디버깅용: 토큰 추가 (결제 과정 생략)
@@ -132,12 +117,20 @@ export function useSubscription() {
 
       try {
         const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+        const currentTokens = userData.subscription?.tokens || 0;
+
         await updateDoc(userRef, {
           "subscription.tokens": increment(tokens),
         });
 
-        // 구독 정보 다시 로드
-        await loadSubscription();
+        // 구독 정보 업데이트
+        const updatedSubscription = {
+          ...userData.subscription,
+          tokens: currentTokens + tokens,
+        };
+        updateSubscription(updatedSubscription);
 
         return true;
       } catch (err) {
@@ -145,19 +138,13 @@ export function useSubscription() {
         throw err;
       }
     },
-    [user, loadSubscription]
+    [user, updateSubscription]
   );
-
-  // 구독 정보 로드
-  useEffect(() => {
-    loadSubscription();
-  }, [loadSubscription]);
 
   return {
     subscription,
     loading,
     error,
-    loadSubscription,
     consumeToken,
     activateSubscriptionForDebug,
     addTokensForDebug,

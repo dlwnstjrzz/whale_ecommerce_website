@@ -40,10 +40,25 @@ export function ResultSection({
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  // 문자열의 바이트 수 계산
+  // 문자열의 바이트 수 계산 (현재 방식)
   const getByteLength = (str) => {
     const encoder = new TextEncoder();
     return encoder.encode(str).length;
+  };
+
+  // LENB 방식의 바이트 수 계산
+  const getLENBByteLength = (str) => {
+    let len = 0;
+    for (let i = 0; i < str.length; i++) {
+      const charCode = str.charCodeAt(i);
+      // 한글, 한자, 특수문자 등은 2바이트로 계산
+      if (charCode > 0x7f) {
+        len += 2;
+      } else {
+        len += 1;
+      }
+    }
+    return len;
   };
 
   // 키워드 삽입 처리
@@ -116,9 +131,7 @@ export function ResultSection({
       // 전체 results 배열을 복사하고 특정 인덱스의 결과만 업데이트
       const updatedResults = [...results];
       updatedResults[index] = {
-        ...updatedResults[index],
-        generatedProductNames: [newProductName],
-        mainKeyword,
+        ...newProductName,
       };
       setResults(updatedResults);
 
@@ -149,13 +162,17 @@ export function ResultSection({
     const currentProductName =
       editedProductName || result.generatedProductNames[0];
     const byteLength = getByteLength(currentProductName);
+    const lenbByteLength = getLENBByteLength(currentProductName);
 
     return (
       <div className="space-y-6">
         {/* 카테고리 */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-base font-bold text-blue-600">카테고리</h2>
+            <h2 className="text-lg font-bold text-blue-600">카테고리</h2>
+            <span className="text-base text-gray-500">
+              (네이버 카테고리 ID: {result.categoryId})
+            </span>
           </div>
           <div className="flex items-center flex-wrap gap-2">
             {result.categoryName.map((category, idx) => (
@@ -167,7 +184,7 @@ export function ResultSection({
                   {category}
                 </span>
                 {idx < result.categoryName.length - 1 && (
-                  <ChevronRight className="h-4 w-4 mx-1 text-gray-400" />
+                  <ChevronRight className="h-5 w-5 mx-1 text-gray-400" />
                 )}
               </div>
             ))}
@@ -183,20 +200,30 @@ export function ResultSection({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-blue-400">
+                    <h2 className="text-xl font-bold text-blue-400">
                       추천 상품명
                     </h2>
-                    <div className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-sm">
-                      <span className="text-white font-bold">{byteLength}</span>
-                      <span className="text-gray-400">/100</span>
-                      <span className="text-gray-400 ml-0.5">bytes</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-base">
+                        <span className="text-white font-bold">
+                          {byteLength} bytes
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-base">
+                        <span className="text-white font-bold">
+                          {lenbByteLength} bytes
+                        </span>
+                        <span className="text-gray-400 ml-1">
+                          *엑셀 LENB 함수 기준
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleCopy(currentProductName, 0)}
-                    className="h-8 px-3 text-sm text-white hover:bg-white/10"
+                    className="h-9 px-3 text-base text-white hover:bg-white/10"
                   >
                     {copiedIndex === 0 ? (
                       <HiCheck className="h-5 w-5 mr-1" />
@@ -211,9 +238,9 @@ export function ResultSection({
                   type="text"
                   value={currentProductName}
                   onChange={(e) => setEditedProductName(e.target.value)}
-                  className="w-full text-2xl font-bold text-white bg-transparent border-0 border-b border-white/20 focus:ring-0 focus:border-white transition-colors px-0 placeholder-white/50"
+                  className="w-full text-3xl font-bold text-white bg-transparent border-0 border-b border-white/20 focus:ring-0 focus:border-white transition-colors px-0 placeholder-white/50"
                 />
-                <div className="flex items-center gap-2 text-sm text-gray-400">
+                <div className="flex items-center gap-2 text-base text-gray-400">
                   <span>원본:</span>
                   <span className="text-gray-300">
                     {originalProductNames[index]}
@@ -227,16 +254,16 @@ export function ResultSection({
               <CardHeader className="pb-3 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-base font-bold text-blue-600">
+                    <CardTitle className="text-lg font-bold text-blue-600">
                       메인 키워드
                     </CardTitle>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger>
-                          <HelpCircle className="h-4 w-4 text-gray-400" />
+                          <HelpCircle className="h-5 w-5 text-gray-400" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="w-[280px] text-sm">
+                          <p className="w-[280px] text-base">
                             메인 키워드는 상품의 원본명과 상세 페이지를 AI가
                             분석해 추출한 대표 키워드이며, 연관 키워드 추출에도
                             활용됩니다. 추출된 연관 키워드가 부적절할 경우, 메인
@@ -251,10 +278,10 @@ export function ResultSection({
                     size="sm"
                     onClick={() => handleRegenerate(index)}
                     disabled={isRegenerating}
-                    className="h-8 px-3 text-sm hover:bg-gray-100"
+                    className="h-9 px-3 text-base hover:bg-gray-100"
                   >
                     <HiRefresh
-                      className={`h-4 w-4 mr-1 ${
+                      className={`h-5 w-5 mr-1 ${
                         isRegenerating ? "animate-spin" : ""
                       }`}
                     />
@@ -283,16 +310,16 @@ export function ResultSection({
             <Card className="border-gray-200 h-full">
               <CardHeader className="pb-3 border-b border-gray-200">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-base font-bold text-blue-600">
+                  <CardTitle className="text-lg font-bold text-blue-600">
                     이미지 특징
                   </CardTitle>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-gray-400" />
+                        <HelpCircle className="h-5 w-5 text-gray-400" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="w-[280px] text-sm">
+                        <p className="w-[280px] text-base">
                           AI가 이미지 속 제품을 분석해 재질, 형태, 기능, 사용
                           용도 등 8가지 핵심 특징을 자동 추출합니다.
                         </p>
@@ -323,10 +350,10 @@ export function ResultSection({
         <Card className="border-gray-200">
           <CardHeader className="pb-3 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-bold text-blue-600">
+              <CardTitle className="text-lg font-bold text-blue-600">
                 연관 키워드
               </CardTitle>
-              <span className="text-sm text-gray-500">
+              <span className="text-base text-gray-500">
                 월간 검색량 기준으로 정렬됩니다
               </span>
             </div>
@@ -334,7 +361,7 @@ export function ResultSection({
           <CardContent className="pt-4">
             {/* 검색 광고 키워드 */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-3">
+              <h3 className="text-base font-medium text-gray-500 mb-3">
                 검색 광고 키워드
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -349,12 +376,12 @@ export function ResultSection({
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() => insertKeyword(keyword.keyword)}
                     >
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-base font-medium text-gray-900">
                         {keyword.keyword}
                       </span>
                       <Badge
                         variant="outline"
-                        className="bg-white border-gray-200 text-xs"
+                        className="bg-white border-gray-200 text-sm"
                       >
                         {getMonthlySearchVolume(keyword).toLocaleString()}
                         <span className="text-gray-500 ml-1">회/월</span>
@@ -366,7 +393,7 @@ export function ResultSection({
 
             {/* 제목 키워드 */}
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-3">
+              <h3 className="text-base font-medium text-gray-500 mb-3">
                 제목 키워드
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -381,12 +408,12 @@ export function ResultSection({
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() => insertKeyword(keyword.keyword)}
                     >
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-base font-medium text-gray-900">
                         {keyword.keyword}
                       </span>
                       <Badge
                         variant="outline"
-                        className="bg-white border-gray-200 text-xs"
+                        className="bg-white border-gray-200 text-sm"
                       >
                         {getMonthlySearchVolume(keyword).toLocaleString()}
                         <span className="text-gray-500 ml-1">회</span>
@@ -408,7 +435,7 @@ export function ResultSection({
           <TabsTrigger
             key={index}
             value={index.toString()}
-            className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:text-gray-900 data-[state=active]:bg-transparent"
+            className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:text-gray-900 data-[state=active]:bg-transparent text-base"
           >
             상품 #{index + 1}
           </TabsTrigger>
