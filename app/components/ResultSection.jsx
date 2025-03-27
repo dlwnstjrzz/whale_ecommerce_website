@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight } from "lucide-react";
 import { HelpCircle } from "lucide-react";
@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
 import * as productService from "../services/product";
 
 export function ResultSection({
@@ -30,7 +31,29 @@ export function ResultSection({
   const [editedMainKeywords, setEditedMainKeywords] = useState({});
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [results, setResults] = useState(initialResults);
+  const [searchVolumeRange, setSearchVolumeRange] = useState([0, 0]);
   const inputRef = useRef(null);
+
+  // 검색 광고 키워드의 최대 검색량을 계산하는 함수
+  const getMaxSearchVolume = (keywords) => {
+    const searchAdKeywords = keywords.filter(
+      (keyword) => keyword.sourceDetails?.[0]?.source === "searchad"
+    );
+    return searchAdKeywords.length > 0
+      ? Math.max(
+          ...searchAdKeywords.map((keyword) => getMonthlySearchVolume(keyword))
+        )
+      : 0;
+  };
+
+  // 초기 검색량 범위 설정
+  useEffect(() => {
+    if (results && results.length > 0) {
+      const maxVolume = getMaxSearchVolume(results[0].relatedKeywords);
+      setSearchVolumeRange([0, maxVolume]);
+    }
+  }, [results]);
+
   console.log("results", results);
   if (!results || results.length === 0) return null;
 
@@ -158,6 +181,20 @@ export function ResultSection({
     const sortedKeywords = [...result.relatedKeywords].sort(
       (a, b) => getMonthlySearchVolume(b) - getMonthlySearchVolume(a)
     );
+
+    // 검색 광고 키워드만 필터링
+    const searchAdKeywords = sortedKeywords.filter(
+      (keyword) => keyword.sourceDetails?.[0]?.source === "searchad"
+    );
+
+    // 최대 검색량 계산
+    const maxSearchVolume = getMaxSearchVolume(result.relatedKeywords);
+
+    // 필터링된 키워드
+    const filteredKeywords = searchAdKeywords.filter((keyword) => {
+      const volume = getMonthlySearchVolume(keyword);
+      return volume >= searchVolumeRange[0] && volume <= searchVolumeRange[1];
+    });
 
     const currentProductName =
       editedProductName || result.generatedProductNames[0];
@@ -361,33 +398,46 @@ export function ResultSection({
           <CardContent className="pt-4">
             {/* 검색 광고 키워드 */}
             <div className="mb-6">
-              <h3 className="text-base font-medium text-gray-500 mb-3">
-                검색 광고 키워드
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-medium text-gray-500">
+                  검색 광고 키워드
+                </h3>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-500">
+                    {searchVolumeRange[0].toLocaleString()} ~{" "}
+                    {searchVolumeRange[1].toLocaleString()} 회/월
+                  </span>
+                  <div className="w-[200px]">
+                    <Slider
+                      value={searchVolumeRange}
+                      onValueChange={setSearchVolumeRange}
+                      min={0}
+                      max={maxSearchVolume}
+                      step={100}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {sortedKeywords
-                  .filter(
-                    (keyword) =>
-                      keyword.sourceDetails?.[0]?.source === "searchad"
-                  )
-                  .map((keyword, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors cursor-pointer"
-                      onClick={() => insertKeyword(keyword.keyword)}
+                {filteredKeywords.map((keyword, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() => insertKeyword(keyword.keyword)}
+                  >
+                    <span className="text-base font-medium text-gray-900">
+                      {keyword.keyword}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="bg-white border-gray-200 text-sm"
                     >
-                      <span className="text-base font-medium text-gray-900">
-                        {keyword.keyword}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className="bg-white border-gray-200 text-sm"
-                      >
-                        {getMonthlySearchVolume(keyword).toLocaleString()}
-                        <span className="text-gray-500 ml-1">회/월</span>
-                      </Badge>
-                    </div>
-                  ))}
+                      {getMonthlySearchVolume(keyword).toLocaleString()}
+                      <span className="text-gray-500 ml-1">회/월</span>
+                    </Badge>
+                  </div>
+                ))}
               </div>
             </div>
 
